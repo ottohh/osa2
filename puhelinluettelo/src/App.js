@@ -74,7 +74,7 @@ const Persons = (props)=>{
       
 
   }
-  
+  console.log("----------------")
   console.log("persons",persons)
   const filterPersons = (person)=>{
 
@@ -132,7 +132,8 @@ const App = (props) => {
     event.preventDefault()
     const newPerson = {
       "name": NewName,
-      "number": number
+      "number": number,
+      "id":persons[persons.length-1].id+1
     }
     if(persons.find(person=>person.name===NewName)){
       let result = window.confirm(`${NewName} already exists. Do you want to change number?`)
