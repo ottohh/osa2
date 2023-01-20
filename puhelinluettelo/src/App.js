@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import React from 'react'
-import axios from 'axios'
-
+import services from './services/services'
+import './index.css'
 
 const Filter = (props)=>{
   return (<div>
@@ -13,12 +13,13 @@ const Filter = (props)=>{
 
 }
 
+
 const PersonForm = (props)=>{
   return(
     <form onSubmit={props.addPerson} >
         <div>
           name: <input  value={props.NewName}
-          onChange={props.handleNoteChange} />
+          onChange={props.handleNameChange} />
 
           <div>number: <input value={props.number}
           onChange={props.handleNumberChange} /></div>
@@ -31,15 +32,55 @@ const PersonForm = (props)=>{
 
 }
 
+const Notification = ( props ) => {
+  if (props.message === "") {
+    return null
+  }
+
+  return (
+    <div className={props.type==="inform"?"inform":"error"}>
+      {props.message}
+    </div>
+  )
+}
+
 const Persons = (props)=>{
 
   const persons=props.persons
   const filter=props.filter
+  const deletePerson = personId =>{
+    const newPersons = Array.from(persons)
+    console.log(personId)
+    console.log(newPersons)
+    const index = newPersons.findIndex(Person=>Person.id==personId)
+    const deletedPerson =newPersons.splice(index,1)
+    console.log(deletedPerson)
+    console.log(newPersons)
+    props.setPersons(newPersons)
+    services.deleteById(personId).then(req=>{
+      props.setNotification(`deleted ${deletedPerson[0].name}`)
+      props.setNotificationType("inform")
+      setTimeout(()=>props.setNotification(""),5000)
+    }    
+
+    ).catch(
+      error=>{
+        props.setNotification(`already deleted ${deletedPerson[0].name}`)
+        props.setNotificationType("error")
+        setTimeout(()=>props.setNotification(""),5000)
+      }
+    )
+
+      
+
+  }
+  
+  console.log("persons",persons)
   const filterPersons = (person)=>{
 
     if(person.name.toLowerCase().includes(filter)){
       return(
-        <li key={person.name}>{person.name} {person.number} </li>
+        <li key={person.id}>{person.name} {person.number} <button onClick={()=>deletePerson(person.id)} >Delete</button></li>
      )  
     }
   }
@@ -53,26 +94,24 @@ const Persons = (props)=>{
 
 const App = (props) => {
 
-
+  
   const [filter,setFilter] = useState("")
   const [persons, setPersons] = useState([])
   const [NewName, setNewName] = useState('')
   const [number,SetNewNumber] = useState('')
+  const [notification,setNotification]=useState("")
+  const [notificationType,setNotificationType]=useState("error")
+
   
 
-  const getPersonsFromServer=()=>{
+  
+  useEffect(()=>{services.getAll().
+    then((response)=>{setPersons(response.data)})
+  
+  },[])
+  
 
-    axios
-    .get('http://localhost:3001/persons').then(response => {
-      console.log('promise fulfilled')
-      console.log(response.data)
-      setPersons(response.data)
-    })
-
-  }
-  useEffect(getPersonsFromServer, [])
-
-  const handleNoteChange = (event) => {
+  const handleNameChange = (event) => {
     
     setNewName(event.target.value)
   }
@@ -91,13 +130,33 @@ const App = (props) => {
 
   const addPerson = (event) => {
     event.preventDefault()
-    
-    if(persons.find(person=>person.name===NewName)){
-      alert(`${NewName} is already added to phonebook`)
-    }else{
-      setPersons(persons.concat({"name":NewName,"number":number}))
+    const newPerson = {
+      "name": NewName,
+      "number": number
     }
-
+    if(persons.find(person=>person.name===NewName)){
+      let result = window.confirm(`${NewName} already exists. Do you want to change number?`)
+      if(result===true){
+        services.update(persons.find(person=>person.name===NewName).id,newPerson)
+        setNotification(`Changed ${newPerson.name}`)
+        setNotificationType("inform")
+        setTimeout(()=>setNotification(""),5000)
+        
+      }
+      
+    }else{
+      setPersons(persons.concat(newPerson))
+      services.create(newPerson)
+      setNotification(`Added ${newPerson.name}`)
+      setNotificationType("inform")
+      setTimeout(()=>setNotification(""),5000)
+      
+      
+      
+    }
+    console.log(persons)
+    
+    
     SetNewNumber("")
     setNewName("")
   }
@@ -105,10 +164,7 @@ const App = (props) => {
   
 
  
-  console.log(persons.map((person)=>{
-    return(
-      <li key={person.name}></li>
-    )  }))
+  
 
 
   return (
@@ -118,11 +174,11 @@ const App = (props) => {
       
       <h2>Add a new</h2>
 
-      <PersonForm addPerson={addPerson} number={number} NewName={NewName} handleNumberChange={handleNumberChange} handleNoteChange={handleNoteChange}
+      <PersonForm addPerson={addPerson} number={number} NewName={NewName} handleNumberChange={handleNumberChange} handleNameChange={handleNameChange}
       />
-      
+      <Notification type={notificationType} message={notification} />
       <h2>Numbers</h2>
-      <Persons persons={persons} filter={filter}/>
+      <Persons setNotificationType={setNotificationType} setNotification={setNotification} persons={persons} filter={filter} setPersons={setPersons}/>
      
       <div>debug: {NewName}</div>
    
