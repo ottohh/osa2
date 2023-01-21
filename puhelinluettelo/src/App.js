@@ -130,10 +130,12 @@ const App = (props) => {
 
   const addPerson = (event) => {
     event.preventDefault()
+    let id=1 
+    if(persons.length!==0)id=persons[persons.length-1].id+1
     const newPerson = {
       "name": NewName,
       "number": number,
-      "id":persons[persons.length-1].id+1
+      "id":id
     }
     if(persons.find(person=>person.name===NewName)){
       let result = window.confirm(`${NewName} already exists. Do you want to change number?`)
