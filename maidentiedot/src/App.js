@@ -71,7 +71,7 @@ const App = () => {
     
     setSearchValue(event.target.value)
     let search = event.target.value
-    console.log(searchValue)
+    console.log(search)
     if(search==""){
       setCountries([])
       return;
@@ -79,7 +79,7 @@ const App = () => {
 
     let countriesMatchingSearchCase = allCountries.filter((Country)=>{
        
-       return Country.name.official.toLowerCase().includes(search.toLowerCase())
+       return Country.name.common.toLowerCase().includes(search.toLowerCase())
     })
     console.log(countriesMatchingSearchCase)
     
